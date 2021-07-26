@@ -8,11 +8,14 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.web.filter.CorsFilter;
 
 import com.cos.jwt.config.jwt.JwtAuthenticationFilter;
+import com.cos.jwt.config.jwt.JwtAuthorizationFilter;
 import com.cos.jwt.filter.MyFilter1;
 import com.cos.jwt.filter.MyFilter3;
+import com.cos.jwt.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig extends WebSecurityConfigurerAdapter{
 	
 	private final CorsFilter corsFilter	;
+	private final UserRepository userRepository;
 	
 	@Bean
 	public BCryptPasswordEncoder bCryptPasswordEncoder() {
@@ -30,7 +34,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 	
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
-		http.addFilterBefore(new MyFilter3(),BasicAuthenticationFilter.class);
+		//http.addFilterBefore(new MyFilter3(),SecurityContextPersistenceFilter.class);
 		http.csrf().disable();
 		//세션사용하지 않겠다는 의미
 		http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -39,6 +43,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		.formLogin().disable()//form태그 만들어서 로그인 안함
 		.httpBasic().disable()
 		.addFilter(new JwtAuthenticationFilter(authenticationManager()))//AuthenticationManager 을 파라미터로 넘겨줘야 함
+		.addFilter(new JwtAuthorizationFilter(authenticationManager(),userRepository))
 		.authorizeRequests()
 		.antMatchers("/api/v1/user/**")
 		.access("hasRole('ROLE_USER') or hasRole('ROLE_MANAGER') or hasRole('ROLE_ADMIN')")
@@ -49,3 +54,4 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		.anyRequest().permitAll();
 	}
 }
+
